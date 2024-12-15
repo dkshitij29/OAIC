@@ -154,18 +154,18 @@ class Environ:
     def step(self, Action1, Action2, ts,option):
         step_size=5
         if Action1==0:
-           add_resource_share =-step_size
+           add_resource_share1 =-step_size
         if Action1==1:
-           add_resource_share = step_size
+           add_resource_share1 = step_size
         if Action2==0:
-           add_resource_share = -step_size
+           add_resource_share2 = -step_size
         if Action2==1:
-           add_resource_share = step_size
+           add_resource_share2 = step_size
            
         DARA_RATE_REQUEST=[40,10]
       
         # SNR_array = np.array(self.SNR_list)
-        shareource_allocation=np.array([add_resource_share, add_resource_share])
+        shareource_allocation=np.array([add_resource_share1, add_resource_share2])
         # # upate resource allocation
         self.sharealloc += shareource_allocation
         # # perform clipping
