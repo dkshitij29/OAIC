@@ -4,6 +4,7 @@ import random
 import os
 import csv
 from data_import import get_data_rate
+import subprocess
 class Flow:
     def __init__(self, idx, service_type, dis, SNR, pkg_number, pkg_size, state_id_SNR, state_id_pkg_size, state_id_pkg_number, state_id_distance, data_rate,state_id, C_alloc, B_alloc, delay_requirement,delay=0):
         self.idx = idx
@@ -155,13 +156,17 @@ class Environ:
         step_size=5
         if Action1==0:
            add_resource_share1 =-step_size
+           throttle_indicator_UE1=True
         if Action1==1:
            add_resource_share1 = step_size
+           throttle_indicator_UE1=False
         if Action2==0:
            add_resource_share2 = -step_size
+           throttle_indicator_UE2=True
         if Action2==1:
            add_resource_share2 = step_size
-           
+           throttle_indicator_UE2=False
+
         DARA_RATE_REQUEST=[40,10]
       
         # SNR_array = np.array(self.SNR_list)
@@ -170,7 +175,13 @@ class Environ:
         self.sharealloc += shareource_allocation
         # # perform clipping
         self.sharealloc = np.clip(self.sharealloc, 1, self.shareacity)
-        
+        script_path = './script/example_script.sh'
+        share_value_UE1= self.sharealloc[0]
+        share_value_UE2= self.sharealloc[1]
+        command1 = [script_path, share_value_UE1, throttle_indicator_UE1]
+        result1 = subprocess.run(command1, capture_output=True, text=True)
+        command2 = [script_path, share_value_UE2, throttle_indicator_UE2]
+        result2 = subprocess.run(command2, capture_output=True, text=True)
         ##################################################
         #here we should call api based on the self.sharealloc #
         ##################################################
@@ -210,7 +221,7 @@ class Environ:
         data_rate_UE2 = self.data_rate[1]
         share1,share2= self.sharealloc[0], self.sharealloc[1]
 
-        self.states_array_ra = [data_rate_UE1, data_rate_UE2]+self.data_rate_request_list
+        self.states_array_ra = [data_rate_UE1[-1], data_rate_UE2[-1]]+self.data_rate_request_list
         save_path_resources_4= os.path.join(self.save_path, 'resource_allocation')
         resource_allocation=np.array(self.states_array_ra+[share1,share2])
         with open(save_path_resources_4  +'_'+ option+'.csv', 'a', newline='') as f:
@@ -247,13 +258,15 @@ class Environ:
         Path_loss_array = 20*np.log10(4*self.pi*self.f_c*distance_array/self.c)+self.Los_sys
         SNR_array = self.P*10**(-Path_loss_array/10)/(self.noise_density*self.sharealloc*1e6)
         self.SNR_list = SNR_array.tolist()
-        self.data_rate = np.round(self.sharealloc * np.log2(1 + SNR_array),3)
+        # self.data_rate = np.round(self.sharealloc * np.log2(1 + SNR_array),3)
+        self.data_rate = get_data_rate()
+
         data_rate_UE1 = self.data_rate[0]
         data_rate_UE2 = self.data_rate[1]
         self.sharealloc = np.clip(self.sharealloc, 1, self.shareacity)
 
         # share, share = self.sharealloc[0], self.sharealloc[1]
-        self.states_array_ra = [data_rate_UE1, data_rate_UE2]+self.data_rate_request_list
+        self.states_array_ra = [data_rate_UE1[-1], data_rate_UE2[-1]]+self.data_rate_request_list
         state_list = [self.states_array_ra]
         return state_list
 
@@ -300,6 +313,7 @@ class Environ:
                service_type=0
 
         s=self.reset(self.flow_list, eps)
+        
         # s_list = s.tolist()
         s_list = s
 
